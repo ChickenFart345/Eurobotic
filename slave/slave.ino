@@ -50,7 +50,7 @@ void setup() {
   digitalWrite(step5, LOW);
   digitalWrite(dir5, LOW);
 
-  Serial.print('r');
+  Serial.println('r');
 }
 
 void loop() {
@@ -59,7 +59,7 @@ void loop() {
     if (c == '\n') {
       parseData(receivedData);
       receivedData = "";
-      Serial.print('r');
+      Serial.println('r');
     } 
     else receivedData += c;
   }
@@ -67,30 +67,30 @@ void loop() {
   int stanje = CalculateState();
 
   if (stanje == 1) {
-    Dir0(2);
-    Dir1(3);
-    Step(2);
-    Step(3);
-  }
-  else if (stanje == 2) {
     Dir1(2);
     Dir0(3);
     Step(2);
     Step(3);
   }
-  else if (stanje == 3) {
+  if (stanje == 2) {
+    Dir0(2);
+    Dir1(3);
+    Step(2);
+    Step(3);
+  }
+  if (stanje == 3) {
     Dir0(1);
     Dir1(4);
     Step(1);
     Step(4);
   }
-  else if (stanje == 4) {
+  if (stanje == 4) {
     Dir1(1);
     Dir0(4);
     Step(1);
     Step(4);
   }
-  else if (stanje == 5) {
+  if (stanje == 5) {
     Dir0(1);
     Dir0(2);
     Dir0(3);
@@ -100,7 +100,7 @@ void loop() {
     Step(3);
     Step(4);
   }
-  else if (stanje == 6) {
+  if (stanje == 6) {
     Dir1(1);
     Dir1(2);
     Dir1(3);
@@ -120,7 +120,7 @@ int CalculateState(){
   if (y1 > 873) return 4; // desno
   if (y2 < 150) return 5; // pivot levo
   if (y2 > 873) return 6; // pivot desno
-  else return 0;
+  return 0;
 }
 
 void parseData(String data) {
@@ -136,7 +136,6 @@ void parseData(String data) {
   y2 = data.substring(z3 + 1, z4).toInt();
   b1 = data.substring(z4 + 1, z5).toInt();
   b2 = data.substring(z5 + 1).toInt();
-
 }
 
 void Dir0(int i)
@@ -201,5 +200,5 @@ void OneStep(int i)
 }
 
 void Step(int i){
-  for (int j; j < speed; j++) OneStep(i);
+  for (int j = 0; j < speed; j++) OneStep(i);
 }

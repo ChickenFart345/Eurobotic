@@ -31,7 +31,18 @@ void loop() {
     int b1 = digitalRead(B1);
     int b2 = digitalRead(B2);
 
-    Serial.println(x1 + ',' + y1 + ',' + x2 + ',' + y2 + ',' + b1 + ',' + b2);
+    //Serial.println(x1 + ',' + y1 + ',' + x2 + ',' + y2 + ',' + b1 + ',' + b2);
+    Serial.print(x1);
+    Serial.print(',');
+    Serial.print(y1);
+    Serial.print(',');
+    Serial.print(x2);
+    Serial.print(',');
+    Serial.print(y2);
+    Serial.print(',');
+    Serial.print(b1);
+    Serial.print(',');
+    Serial.println(b2);
     ready = false;
   }
 }
