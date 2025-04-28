@@ -22,8 +22,8 @@
 
 int x1, y1, x2, y2, b1, b2;
 String receivedData = "";
-const int t = 500;
-const int speed = 10;
+const int t = 300;
+const int speed = 2;
 
 void setup() {
   Serial.begin(38400);
