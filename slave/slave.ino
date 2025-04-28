@@ -1,5 +1,7 @@
 #include <String.h>
+#include <TM1637Display.h>
 
+// stepper motori za kretanje
 #define step1 22
 #define dir1 23
 #define step2 24
@@ -9,21 +11,36 @@
 #define step4 28
 #define dir4 29
 
+// stepper motor za dizanje sprata
 #define step5 30
 #define dir5 31
 
+// bluetooth komunikacija
 #define RX 0
 #define TX 1
 
+// servo motori
 #define servo_levo 32
 #define servo_desno 33
 #define servo_grab_grab 34
 #define servo_vakuum 35
 
-int x1, y1, x2, y2, b1, b2;
+// score screen
+#define CLK 3
+#define DIO 4
+
+// promenljive koje dolaze sa bluetootha
+int x1, y1, x2, y2, b1, b2, cifra;
+// podaci sa bluetootha
 String receivedData = "";
+// promenljive za kretanje
 const int t = 300;
 const int speed = 2;
+// promenljiva za score
+int score = 0;
+
+// 4-digit 7-segment display
+TM1637Display display = TM1637Display(CLK, DIO);
 
 void setup() {
   Serial.begin(38400);
@@ -51,6 +68,8 @@ void setup() {
   digitalWrite(dir5, LOW);
 
   Serial.println('r');
+  display.setBrightness(5);
+  display.showNumberDec(score, true);
 }
 
 void loop() {
@@ -110,6 +129,15 @@ void loop() {
     Step(3);
     Step(4);
   }
+
+  if (cifra != 0) {
+    score = score * 10 + cifra;
+    score %= 1000;
+    cifra = 0;
+
+    display.clear();
+    display.showNumberDec(score);
+  }
 }
 
 int CalculateState(){
@@ -129,13 +157,16 @@ void parseData(String data) {
   int z3 = data.indexOf(',', z2 + 1);
   int z4 = data.indexOf(',', z3 + 1);
   int z5 = data.indexOf(',', z4 + 1);
+  int z6 = data.indexOf(',', z5 + 1);
 
   x1 = data.substring(0, z1).toInt();
   y1 = data.substring(z1 + 1, z2).toInt();
   x2 = data.substring(z2 + 1, z3).toInt();
   y2 = data.substring(z3 + 1, z4).toInt();
   b1 = data.substring(z4 + 1, z5).toInt();
-  b2 = data.substring(z5 + 1).toInt();
+  b2 = data.substring(z5 + 1, z6).toInt();
+
+  cifra = data.substring(z6 + 1).toInt();
 }
 
 void Dir0(int i)

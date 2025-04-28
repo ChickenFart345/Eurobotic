@@ -1,9 +1,25 @@
+#include "Keypad.h"
+
 #define X1 A0
 #define Y1 A1
 #define X2 A2
 #define Y2 A3
-#define B1 6
-#define B2 7
+#define B1 3
+#define B2 4
+
+const byte ROWS = 4; //four rows
+const byte COLS = 4; //four columns
+char keys[ROWS][COLS] =
+ {{'1','2','3','A'},
+  {'4','5','6','B'},
+  {'7','8','9','C'},
+  {'*','0','#','D'}};
+byte rowPins[ROWS] = {
+  5, 6, 7, 8}; //connect to the row pinouts of the keypad
+byte colPins[COLS] = {
+  9, 10, 11, 12}; //connect to the column pinouts of the keypad
+
+Keypad keypad = Keypad( makeKeymap(keys), rowPins, colPins, ROWS, COLS );
 
 void setup() {
   Serial.begin(38400);
@@ -30,8 +46,9 @@ void loop() {
     int y2 = analogRead(Y2);
     int b1 = digitalRead(B1);
     int b2 = digitalRead(B2);
+    char key = keypad.getKey();
+    if (key == NO_KEY) key = ' ';
 
-    //Serial.println(x1 + ',' + y1 + ',' + x2 + ',' + y2 + ',' + b1 + ',' + b2);
     Serial.print(x1);
     Serial.print(',');
     Serial.print(y1);
@@ -42,7 +59,10 @@ void loop() {
     Serial.print(',');
     Serial.print(b1);
     Serial.print(',');
-    Serial.println(b2);
+    Serial.print(b2);
+    Serial.print(',');
+    Serial.println(key);
     ready = false;
+
   }
 }
