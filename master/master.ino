@@ -1,4 +1,5 @@
 #include "Keypad.h"
+#include <string.h>
 
 #define X1 A0
 #define Y1 A1
@@ -47,7 +48,11 @@ void loop() {
     int b1 = digitalRead(B1);
     int b2 = digitalRead(B2);
     char key = keypad.getKey();
-    if (key == NO_KEY) key = ' ';
+    
+    int ans;
+    if (key == NO_KEY) ans = -1;
+    else if (key >= '0' && key <= '9') ans = key - '0';
+    else ans = -2;
 
     Serial.print(x1);
     Serial.print(',');
@@ -61,8 +66,7 @@ void loop() {
     Serial.print(',');
     Serial.print(b2);
     Serial.print(',');
-    Serial.println(key);
+    Serial.println(ans);
     ready = false;
-
   }
 }

@@ -130,11 +130,15 @@ void loop() {
     Step(4);
   }
 
-  if (cifra != 0) {
-    score = score * 10 + cifra;
-    score %= 1000;
-    cifra = 0;
+  if (cifra != -1) {
+    if (cifra == -2) score = 0;
+    else {
+      score = score * 10 + cifra;
+      score %= 1000;
+    }
 
+    cifra = -1;
+    
     display.clear();
     display.showNumberDec(score);
   }
