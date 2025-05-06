@@ -36,15 +36,15 @@
 #define CLK 3
 #define DIO 4
 
-// promenljive koje dolaze sa bluetootha
+// promenljive za bluetooth
 int x1, y1, x2, y2, b1, b2, cifra;
-
-// podaci sa bluetootha
 String receivedData = "";
+bool connected = false;
 
 // promenljive za kretanje
-const int t = 300;
+const int t = 900;
 const int speed = 2;
+int stanje = 0;
 
 // promenljiva za score
 int score = 0;
@@ -72,6 +72,9 @@ const int ugao_baner = ugao_pocetak_baner + 0;                      // treba tes
 
 // promenljiva za podizanje sprata
 const int sprat = 800;                                              // treba testiranje
+
+// promenljive za neblokirajuci kod
+unsigned long long pocetak, temp;
 
 // 4-digit 7-segment display
 TM1637Display display = TM1637Display(CLK, DIO);
@@ -137,16 +140,18 @@ void setup() {
 
 void loop() {
   while (Serial.available()) {
+    connected = true;
     char c = Serial.read();
     if (c == '\n') {
       parseData(receivedData);
+      pocetak = millis();
       receivedData = "";
       Serial.println('r');
     } 
     else receivedData += c;
   }
 
-  int stanje = CalculateState();
+  stanje = CalculateState();
 
   if (stanje == 1) { // napred
     Dir1(2);
@@ -217,7 +222,7 @@ void loop() {
     rukica_desno.write(ugao_pocetak_rotacija_rukica_desno);
 
     // spustanje daske
-    vakuum.write(ugao_spustanje_daske);
+    vakuum.write(ugao_spustanja_daske);
           // ovde treba da stoji kod za vakuum pumpu
   }
   if (stanje == 8) { // baner
@@ -241,6 +246,8 @@ void loop() {
 }
 
 int CalculateState(){
+  if (!connected) return 0;
+
   // u slucaju da su pinovi od joystick-a okrenuti na gore
   if (x1 < 150) return 1; // napred
   if (x1 > 873) return 2; // nazad
@@ -291,44 +298,21 @@ void Dir1(int i)
 
 void OneStep(int i)
 {
-  if (i == 1)
-  {
-    digitalWrite(step1, HIGH);
-    delayMicroseconds(t);
-    digitalWrite(step1, LOW);
-    delayMicroseconds(t);
-  }
+  temp = millis();
 
-  else if (i == 2)
-  {
-    digitalWrite(step2, HIGH);
-    delayMicroseconds(t);
-    digitalWrite(step2, LOW);
-    delayMicroseconds(t);
+  if (temp - pocetak < t) {
+    if (i == 1) digitalWrite(step1, HIGH);
+    if (i == 2) digitalWrite(step2, HIGH);
+    if (i == 3) digitalWrite(step3, HIGH);
+    if (i == 4) digitalWrite(step4, HIGH);
+    if (i == 5) digitalWrite(step5, HIGH);
   }
-
-  else if (i == 3)
-  {
-    digitalWrite(step3, HIGH);
-    delayMicroseconds(t);
-    digitalWrite(step3, LOW);
-    delayMicroseconds(t);
-  }
-
-  else if (i == 4)
-  {
-    digitalWrite(step4, HIGH);
-    delayMicroseconds(t);
-    digitalWrite(step4, LOW);
-    delayMicroseconds(t);
-  }
-
-  else if (i == 5)
-  {
-    digitalWrite(step5, HIGH);
-    delayMicroseconds(t);
-    digitalWrite(step5, LOW);
-    delayMicroseconds(t);
+  else if (temp - pocetak < 2 * t) {
+    if (i == 1) digitalWrite(step1, LOW);
+    if (i == 2) digitalWrite(step2, LOW);
+    if (i == 3) digitalWrite(step3, LOW);
+    if (i == 4) digitalWrite(step4, LOW);
+    if (i == 5) digitalWrite(step5, LOW);
   }
 }
 
