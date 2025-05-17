@@ -3,7 +3,7 @@
 #include <Servo.h>
 #include <TM1637Display.h>
 
-// deklarisanje pinova
+// Stepper motori
 // beli
 #define dirPrednji 2
 #define stepPrednji 3
@@ -16,39 +16,63 @@
 // prazni
 #define dirZadnji 8
 #define stepZadnji 9
+// sprat
+#define dirSprat 52
+#define stepSprat 50
+
+// Servo motori
+#define BanerPin 10
+#define PumpaServoPin ...
+#define ServoLevi ...
+#define ServoDesno ...
+
+// relej
+#define PumpaRelejPin 48
+
 // displej
 #define CLK 11
 #define DIO 12
 
 // brzina
 const int brzina = 200;
+const int brzina_sprat = 800;
 // promenljive
 bool banerBool = false;
+bool pumpaBool = false;
 int bodovi = 0;
 
 //Servo motori
-Servo baner;
+Servo baner, pumpa_servo;
 //Step motori
 AccelStepper prednji(AccelStepper::DRIVER, stepPrednji, dirPrednji);
 AccelStepper desni(AccelStepper::DRIVER, stepDesni, dirDesni);
 AccelStepper levi(AccelStepper::DRIVER, stepLevi, dirLevi);
 AccelStepper zadnji(AccelStepper::DRIVER, stepZadnji, dirZadnji);
+AccelStepper sprat(AccelStepper::DRIVER, stepSprat, dirSprat);
 
 TM1637Display display = TM1637Display(CLK, DIO);
 
 void setup() {
     Serial.begin(38400);
+		
+		pinMode(PumpaRelejPin, OUTPUT);
+
     prednji.setMaxSpeed(1200);
     desni.setMaxSpeed(1200);
     levi.setMaxSpeed(1200);
     zadnji.setMaxSpeed(1200);
-    prednji.setAcceleration(200);
+    sprat.setMaxSpeed(3600);
+
+		prednji.setAcceleration(200);
     desni.setAcceleration(200);
     levi.setAcceleration(200);
     zadnji.setAcceleration(200);
-    baner.attach(10);
+    sprat.setAcceleration(800);
+
+		baner.attach(BanerPin);
     baner.write(90);
-    display.setBrightness(5);
+    
+		display.setBrightness(5);
     display.showNumberDec(bodovi, true);   
 }
 
@@ -71,21 +95,32 @@ void calculate(int c) {
   else if(c == 15){
     nazad(brzina);
   }
-  else if(c == 17){
+  else if(c == 16){
     levo(brzina);
   }
-  else if(c == 16){
+  else if(c == 17){
     desno(brzina);
   }
-  else if(c == 13){
-    rdesno();
-  }
-  else if(c == 12){
-    rlevo();
-  }
+	
+	else if (c == 18){
+		gore(brzina_sprat);
+	}
+	else if (c == 19){
+		dole(brzina_sprat);
+	}
+	else if (c == 20){
+		rlevo();
+	}
+	else if (c == 21){
+		rdesno();
+	}
+
   else if(c == 11){
     banerFja();
   }
+	else if(c == 12){
+		pumpaFja();
+	}
   else if(c < 10){
     dodajBroj(c);
   }
@@ -99,6 +134,36 @@ void banerFja(){
     baner.write(90);
   }
   banerBool = !banerBool;
+}
+
+void pumpaFja(){
+  if(!pumpaBool){
+    digitalWrite(PumpaRelejPin, HIGH);
+  }
+  else{
+    digitalWrite(PumpaRelejPin, LOW);
+  }
+  pumpaBool = !pumpaBool;
+}
+
+void dole(float brzina) {
+    sprat.setSpeed(-brzina);
+    if (sprat.speed() != brzina) {
+        sprat.run();
+    }
+    else {
+        sprat.runSpeed();
+    }
+}
+
+void gore(float brzina) {
+    sprat.setSpeed(brzina);
+    if (sprat.speed() != brzina) {
+        sprat.run();
+    }
+    else {
+        sprat.runSpeed();
+    }
 }
 
 void napred(float brzina) {

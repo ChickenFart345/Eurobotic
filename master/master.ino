@@ -35,6 +35,9 @@ void setup() {
 }
 
 bool baner = false;
+bool pumpa = false;
+bool elektro = false;
+
 void loop(){
   int x1 = analogRead(X1);
   int y1 = analogRead(Y1);
@@ -46,17 +49,22 @@ void loop(){
   char key = keypad.getKey();
 	
 	if (baner && b1 == 1) { Serial.write(11); baner = false; }
+	else if (pumpa && b2 == 1) { Serial.write(12); pumpa = false; }
 	else if (key != NO_KEY) {
   	if (key >= '0' && key <= '9') Serial.write(key - '0');
 	}
-	else if (b1 == 0) baner = true;
-	else if (b2 == 0) Serial.write(12);
-	else if (b3 == 0) Serial.write(13);
+	
+	else if (b1 == 0) baner = true; 			// baner 
+	else if (b2 == 0) pumpa = true;				// pumpa 
+	else if (b3 == 0) Serial.write(13);		// ... 
 
-	else if (x1 < 200) Serial.write(14);
-	else if (x1 > 823) Serial.write(15);
-	else if (y1 < 200) Serial.write(16);
-	else if (y1 > 823) Serial.write(17);
-	else Serial.write(18);
-
+	else if (x1 < 200) Serial.write(14); 	// napred
+	else if (x1 > 823) Serial.write(15); 	// nazad
+	else if (y1 < 200) Serial.write(16); 	// levo
+	else if (y1 > 823) Serial.write(17); 	// desno
+	
+	else if (x2 < 200) Serial.write(18);	// gore
+	else if (x2 > 823) Serial.write(19);	// dole
+	else if (y2 < 200) Serial.write(20);	// pivot levo
+	else if (y2 > 823) Serial.write(21);	// pivot desno
 }
