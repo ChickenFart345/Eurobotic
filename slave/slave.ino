@@ -1,337 +1,199 @@
-#include <String.h>
-#include <TM1637Display.h>
+// biblioteke
+#include <AccelStepper.h>
 #include <Servo.h>
+#include <TM1637Display.h>
 
-// stepper motori za kretanje
-#define step1 22
-#define dir1 23
-#define step2 24
-#define dir2 25
-#define step3 26
-#define dir3 27
-#define step4 28
-#define dir4 29
+// deklarisanje pinova
+// beli
+#define dirPrednji 2
+#define stepPrednji 3
+// zuti
+#define dirDesni 4
+#define stepDesni 5
+// crveni
+#define dirLevi 6
+#define stepLevi 7
+// prazni
+#define dirZadnji 8
+#define stepZadnji 9
+// displej
+#define CLK 11
+#define DIO 12
 
-// stepper motor za dizanje sprata
-#define step5 30
-#define dir5 31
+// brzina
+const int brzina = 200;
+// promenljive
+bool banerBool = false;
+int bodovi = 0;
 
-// bluetooth komunikacija
-#define RX 0
-#define TX 1
+//Servo motori
+Servo baner;
+//Step motori
+AccelStepper prednji(AccelStepper::DRIVER, stepPrednji, dirPrednji);
+AccelStepper desni(AccelStepper::DRIVER, stepDesni, dirDesni);
+AccelStepper levi(AccelStepper::DRIVER, stepLevi, dirLevi);
+AccelStepper zadnji(AccelStepper::DRIVER, stepZadnji, dirZadnji);
 
-// servo motori
-#define servo_rukica_levo 32
-#define servo_rukica_desno 33
-#define servo_grab_grab_levo 34
-#define servo_grab_grab_desno 35
-#define servo_vakuum 36
-#define servo_baner 37
-
-// elektromagneti
-#define elektromagnet_levo 38
-#define elektromagnet_desno 39
-
-// score screen
-#define CLK 3
-#define DIO 4
-
-// promenljive koje dolaze sa bluetootha
-int x1, y1, x2, y2, b1, b2, cifra;
-
-// podaci sa bluetootha
-String receivedData = "";
-
-// promenljive za kretanje
-const int t = 300;
-const int speed = 2;
-
-// promenljiva za score
-int score = 0;
-
-// promenljive za servo motore rukica
-const int ugao_rotacija_rukica_levo = 0;
-const int ugao_pocetak_rotacija_rukica_levo = 90;
-const int ugao_pocetak_igre_rukica_levo = 180;
-const int ugao_rotacija_rukica_desno = 180;
-const int ugao_pocetak_rotacija_rukica_desno = 90;
-const int ugao_pocetak_igre_rukica_desno = 0;
-
-// promenljive za servo motore grab_grab
-const int ugao_pocetak_hvatanja = 0;                                // treba testiranje
-const int ugao_hvatanja = ugao_pocetak_hvatanja + 0;                // treba testiranje
-
-
-// promenljive za servo motora vakuum pumpe
-const int ugao_dizanja_daske = 0;                                   // treba testiranje
-const int ugao_spustanja_daske = 0;                                 // treba testiranje
-
-// promenljive za servo motora banera
-const int ugao_pocetak_baner = 0;                                   // treba testiranje
-const int ugao_baner = ugao_pocetak_baner + 0;                      // treba testiranje
-
-// promenljiva za podizanje sprata
-const int sprat = 800;                                              // treba testiranje
-
-// 4-digit 7-segment display
 TM1637Display display = TM1637Display(CLK, DIO);
 
-// servo motori
-Servo rukica_levo, rukica_desno, grab_grab_levo, grab_grab_desno, vakuum, baner;
-
 void setup() {
-  // bluetooth komunikacija
-  Serial.begin(38400);
-
-  // pinovi za steppere
-  pinMode(step1, OUTPUT);
-  pinMode(dir1, OUTPUT);
-  pinMode(step2, OUTPUT);
-  pinMode(dir2, OUTPUT);
-  pinMode(step3, OUTPUT);
-  pinMode(dir3, OUTPUT);
-  pinMode(step4, OUTPUT);
-  pinMode(dir4, OUTPUT);
-  pinMode(step5, OUTPUT);
-  pinMode(dir5, OUTPUT);
-
-  // servo motori
-  rukica_levo.attach(servo_rukica_levo);
-  rukica_desno.attach(servo_rukica_desno);
-  grab_grab_levo.attach(servo_grab_grab_levo);
-  grab_grab_desno.attach(servo_grab_grab_desno);
-  vakuum.attach(servo_vakuum);
-  baner.attach(servo_baner);
-
-  // pinovi za elektromagnete
-  pinMode(elektromagnet_levo, OUTPUT);
-  pinMode(elektromagnet_desno, OUTPUT);
-
-  // 4-digit 7-segment display
-  display.setBrightness(5);
-  display.showNumberDec(score, true);
-  
-  // postavljanje steppera na nulu
-  digitalWrite(step1, LOW);
-  digitalWrite(dir1, LOW);
-  digitalWrite(step2, LOW);
-  digitalWrite(dir2, LOW);
-  digitalWrite(step3, LOW);
-  digitalWrite(dir3, LOW);
-  digitalWrite(step4, LOW);
-  digitalWrite(dir4, LOW);
-  digitalWrite(step5, LOW);
-  digitalWrite(dir5, LOW);
-
-  // postavljanje servo motora na nulu
-  rukica_levo.write(ugao_pocetak_rotacija_rukica_levo);
-  rukica_desno.write(ugao_pocetak_rotacija_rukica_desno);
-  grab_grab_levo.write(ugao_pocetak_hvatanja);
-  grab_grab_desno.write(ugao_pocetak_hvatanja);
-  vakuum.write(ugao_dizanja_daske);
-  baner.write(ugao_pocetak_baner);
-
-  // pocetak bluetooth komunikacije
-  Serial.println('r');
+    Serial.begin(38400);
+    prednji.setMaxSpeed(1200);
+    desni.setMaxSpeed(1200);
+    levi.setMaxSpeed(1200);
+    zadnji.setMaxSpeed(1200);
+    prednji.setAcceleration(200);
+    desni.setAcceleration(200);
+    levi.setAcceleration(200);
+    zadnji.setAcceleration(200);
+    baner.attach(10);
+    baner.write(90);
+    display.setBrightness(5);
+    display.showNumberDec(bodovi, true);   
 }
 
 void loop() {
-  while (Serial.available()) {
-    char c = Serial.read();
-    if (c == '\n') {
-      parseData(receivedData);
-      receivedData = "";
-      Serial.println('r');
-    } 
-    else receivedData += c;
-  }
+    komande(brzina);
+}
 
-  int stanje = CalculateState();
-
-  if (stanje == 1) { // napred
-    Dir1(2);
-    Dir0(3);
-    Step(2);
-    Step(3);
+int c;
+void komande(float brzina){
+  if (Serial.available()) {
+      c = Serial.read();
+      calculate(c);
   }
-  if (stanje == 2) { // nazad
-    Dir0(2);
-    Dir1(3);
-    Step(2);
-    Step(3);
-  }
-  if (stanje == 3) { // levo
-    Dir0(1);
-    Dir1(4);
-    Step(1);
-    Step(4);
-  }
-  if (stanje == 4) { // desno
-    Dir1(1);
-    Dir0(4);
-    Step(1);
-    Step(4);
-  }
-  if (stanje == 5) { // pivot levo
-    Dir0(1);
-    Dir0(2);
-    Dir0(3);
-    Dir0(4);
-    Step(1);
-    Step(2);
-    Step(3);
-    Step(4);
-  }
-  if (stanje == 6) { // pivot desno
-    Dir1(1);
-    Dir1(2);
-    Dir1(3);
-    Dir1(4);
-    Step(1);
-    Step(2);
-    Step(3);
-    Step(4);
-  }
-  if (stanje == 7) { // sprat
-    // fiksiranje konzervi za rukice
-    digitalWrite(elektromagnet_levo, HIGH);
-    digitalWrite(elektromagnet_desno, HIGH);
+}
 
-    // fiksiranje konzervi za grab_grab
-    grab_grab_levo.write(ugao_hvatanja);
-    grab_grab_desno.write(ugao_hvatanja);
-
-    // okretanje rukica
-    rukica_levo.write(ugao_rotacija_rukica_levo);
-    rukica_desno.write(ugao_rotacija_rukica_desno);
-
-    // uzimanje daske vakuumom
-          // ovde treba da stoji kod za vakuum pumpu
-    vakuum.write(ugao_dizanja_daske);
-
-    // podizanje sprata
-    for (int temp = 0; temp < sprat; temp++) OneStep(5);
-
-    // vracanje rukica
-    rukica_levo.write(ugao_pocetak_rotacija_rukica_levo);
-    rukica_desno.write(ugao_pocetak_rotacija_rukica_desno);
-
-    // spustanje daske
-    vakuum.write(ugao_spustanje_daske);
-          // ovde treba da stoji kod za vakuum pumpu
+void calculate(int c) {
+  if(c == 14){
+    napred(brzina);
   }
-  if (stanje == 8) { // baner
-    // treba iskucati kod ali to tek kad se ljudi dogovore kako cemo raditi
+  else if(c == 15){
+    nazad(brzina);
   }
-  
+  else if(c == 17){
+    levo(brzina);
+  }
+  else if(c == 16){
+    desno(brzina);
+  }
+  else if(c == 13){
+    rdesno();
+  }
+  else if(c == 12){
+    rlevo();
+  }
+  else if(c == 11){
+    banerFja();
+  }
+  else if(c < 10){
+    dodajBroj(c);
+  }
+}
 
-  // ukucavanje score-a
-  if (cifra != -1) {
-    if (cifra == -2) score = 0;
-    else {
-      score = score * 10 + cifra;
-      score %= 1000;
+void banerFja(){
+  if(!banerBool){
+    baner.write(140);
+  }
+  else{
+    baner.write(90);
+  }
+  banerBool = !banerBool;
+}
+
+void napred(float brzina) {
+    desni.setSpeed(brzina);
+    levi.setSpeed(brzina);
+    if (desni.speed() != brzina) {
+        desni.run();
+        levi.run();
     }
-
-    cifra = -1;
-    
-    display.clear();
-    display.showNumberDec(score);
-  }
+    else {
+        desni.runSpeed();
+        levi.runSpeed();
+    }
 }
 
-int CalculateState(){
-  // u slucaju da su pinovi od joystick-a okrenuti na gore
-  if (x1 < 150) return 1; // napred
-  if (x1 > 873) return 2; // nazad
-  if (y1 < 150) return 3; // levo
-  if (y1 > 873) return 4; // desno
-  if (y2 < 150) return 5; // pivot levo
-  if (y2 > 873) return 6; // pivot desno
-  if (b1 == 1) return 7;  // sprat
-  if (b2 == 1) return 8;  // baner  
-  return 0;
+void nazad(float brzina){
+    desni.setSpeed(-brzina);
+    levi.setSpeed(-brzina);
+    if (desni.speed() != brzina) {
+        desni.run();
+        levi.run();
+    }
+    else {
+        desni.runSpeed();
+        levi.runSpeed();
+    }
 }
 
-void parseData(String data) {
-  int z1 = data.indexOf(',');
-  int z2 = data.indexOf(',', z1 + 1);
-  int z3 = data.indexOf(',', z2 + 1);
-  int z4 = data.indexOf(',', z3 + 1);
-  int z5 = data.indexOf(',', z4 + 1);
-  int z6 = data.indexOf(',', z5 + 1);
-
-  x1 = data.substring(0, z1).toInt();
-  y1 = data.substring(z1 + 1, z2).toInt();
-  x2 = data.substring(z2 + 1, z3).toInt();
-  y2 = data.substring(z3 + 1, z4).toInt();
-  b1 = data.substring(z4 + 1, z5).toInt();
-  b2 = data.substring(z5 + 1, z6).toInt();
-
-  cifra = data.substring(z6 + 1).toInt();
+void levo(float brzina){
+    zadnji.setSpeed(brzina);
+    prednji.setSpeed(brzina);
+    if (zadnji.speed() != brzina) {
+        zadnji.run();
+        prednji.run();
+    }
+    else {
+        zadnji.runSpeed();
+        prednji.runSpeed();
+    }
 }
 
-void Dir0(int i)
-{
-  if (i == 1) digitalWrite(dir1, LOW);
-  if (i == 2) digitalWrite(dir2, LOW);
-  if (i == 3) digitalWrite(dir3, LOW);
-  if (i == 4) digitalWrite(dir4, LOW);
-  if (i == 5) digitalWrite(dir5, LOW);
+void desno(float brzina){
+    zadnji.setSpeed(-brzina);
+    prednji.setSpeed(-brzina);
+    if (zadnji.speed() != brzina) {
+        zadnji.run();
+        prednji.run();
+    }
+    else {
+        zadnji.runSpeed();
+        prednji.runSpeed();
+    }
 }
 
-void Dir1(int i)
-{
-  if (i == 1) digitalWrite(dir1, HIGH);
-  if (i == 2) digitalWrite(dir2, HIGH);
-  if (i == 3) digitalWrite(dir3, HIGH);
-  if (i == 4) digitalWrite(dir4, HIGH);
-  if (i == 5) digitalWrite(dir5, HIGH);
+void rdesno(){
+    zadnji.setSpeed(brzina);
+    prednji.setSpeed(-brzina);
+    desni.setSpeed(brzina);
+    levi.setSpeed(-brzina);
+    if (zadnji.speed() != brzina) {
+        zadnji.run();
+        prednji.run();
+        desni.run();
+        levi.run();
+    }
+    else {
+        zadnji.runSpeed();
+        prednji.runSpeed();
+        desni.runSpeed();
+        levi.runSpeed();
+    }
 }
 
-void OneStep(int i)
-{
-  if (i == 1)
-  {
-    digitalWrite(step1, HIGH);
-    delayMicroseconds(t);
-    digitalWrite(step1, LOW);
-    delayMicroseconds(t);
-  }
-
-  else if (i == 2)
-  {
-    digitalWrite(step2, HIGH);
-    delayMicroseconds(t);
-    digitalWrite(step2, LOW);
-    delayMicroseconds(t);
-  }
-
-  else if (i == 3)
-  {
-    digitalWrite(step3, HIGH);
-    delayMicroseconds(t);
-    digitalWrite(step3, LOW);
-    delayMicroseconds(t);
-  }
-
-  else if (i == 4)
-  {
-    digitalWrite(step4, HIGH);
-    delayMicroseconds(t);
-    digitalWrite(step4, LOW);
-    delayMicroseconds(t);
-  }
-
-  else if (i == 5)
-  {
-    digitalWrite(step5, HIGH);
-    delayMicroseconds(t);
-    digitalWrite(step5, LOW);
-    delayMicroseconds(t);
-  }
+void rlevo(){
+    zadnji.setSpeed(-brzina);
+    prednji.setSpeed(brzina);
+    desni.setSpeed(-brzina);
+    levi.setSpeed(brzina);
+    if (zadnji.speed() != brzina) {
+        zadnji.run();
+        prednji.run();
+        desni.run();
+        levi.run();
+    }
+    else {
+        zadnji.runSpeed();
+        prednji.runSpeed();
+        desni.runSpeed();
+        levi.runSpeed();
+    }
 }
 
-void Step(int i){
-  for (int j = 0; j < speed; j++) OneStep(i);
+void dodajBroj(int c){
+  bodovi *= 10;
+  bodovi += c;
+  bodovi %= 1000;
+  display.showNumberDec(bodovi, true);
 }
