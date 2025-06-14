@@ -36,7 +36,7 @@ void setup() {
 
 bool baner = false;
 bool pumpa = false;
-bool elektro = false;
+bool rukice = false;
 
 void loop(){
   int x1 = analogRead(X1);
@@ -50,13 +50,14 @@ void loop(){
 	
 	if (baner && b1 == 1) { Serial.write(11); baner = false; }
 	else if (pumpa && b2 == 1) { Serial.write(12); pumpa = false; }
+	else if (rukice && b3 == 1) {Serial.write(13); rukice = false; }
 	else if (key != NO_KEY) {
   	if (key >= '0' && key <= '9') Serial.write(key - '0');
 	}
 	
 	else if (b1 == 0) baner = true; 			// baner 
-	else if (b2 == 0) pumpa = true;				// pumpa 
-	else if (b3 == 0) Serial.write(13);		// ... 
+	else if (b2 == 0) pumpa = true;				// pumpa i elektromagneti 
+	else if (b3 == 0) rukice = true;			// rotiranje rukica
 
 	else if (x1 < 200) Serial.write(14); 	// napred
 	else if (x1 > 823) Serial.write(15); 	// nazad
@@ -67,4 +68,6 @@ void loop(){
 	else if (x2 > 823) Serial.write(19);	// dole
 	else if (y2 < 200) Serial.write(20);	// pivot levo
 	else if (y2 > 823) Serial.write(21);	// pivot desno
+
+	else Serial.write(22);								// stani
 }
